@@ -1,5 +1,5 @@
 import { ChatCohere } from "@langchain/cohere";
-import { ConversationalRetrievalQAChain } from 'langchain/chains';
+import { ConversationalRetrievalQAChain } from "@langchain/classic/chains";
 import { Chroma } from "@langchain/community/vectorstores/chroma";
 
 const CONDENSE_PROMPT = `Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question.
@@ -21,7 +21,7 @@ Helpful answer in markdown:`;
 export const makeChain = (vectorstore: Chroma) => {
   const model = new ChatCohere({
     temperature: 0, // increase temepreature to get more creative answers
-    modelName: 'command-a-03-2025', //change this to latest model
+    model: 'command-a-03-2025', //change this to latest model
   });
 
   const chain = ConversationalRetrievalQAChain.fromLLM(
