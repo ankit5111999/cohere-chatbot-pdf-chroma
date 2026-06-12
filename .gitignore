@@ -38,3 +38,5 @@ next-env.d.ts
 /Notion_DB
 
 .yarn/
+# uploaded PDFs and vectorstore
+/docs

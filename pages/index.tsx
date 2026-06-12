@@ -96,6 +96,7 @@ export default function Home() {
               type: 'apiMessage',
               message: data.text,
               sourceDocs: data.sourceDocuments,
+              sources: data.sources,
             },
           ],
           history: [...state.history, [question, data.text]],
@@ -246,7 +247,7 @@ export default function Home() {
                         : styles.usermessage;
                   }
                   return (
-                    <>
+                    <div key={`messageGroup-${index}`}>
                       <div key={`chatMessage-${index}`} className={className}>
                         {icon}
                         <div className={styles.markdownanswer}>
@@ -255,35 +256,49 @@ export default function Home() {
                           </ReactMarkdown>
                         </div>
                       </div>
-                       {message.sourceDocs && (
-                         <div
-                           className="p-5"
-                           key={`sourceDocsAccordion-${index}`}
-                         >
-                           <Accordion
-                             type="single"
-                             collapsible
-                             className="flex-col"
-                           >
-                             {message.sourceDocs.map((doc, docIndex) => (
-                               <AccordionItem key={`messageSourceDocs-${docIndex}`} value={`item-${docIndex}`}>
-                                 <AccordionTrigger>
-                                   <h3>Source {docIndex + 1}</h3>
-                                 </AccordionTrigger>
-                                 <AccordionContent>
-                                   <ReactMarkdown>
-                                     {doc.pageContent}
-                                   </ReactMarkdown>
-                                   <p className="mt-2">
-                                     <b>Source:</b> {doc.metadata.source}
-                                   </p>
-                                 </AccordionContent>
-                               </AccordionItem>
-                             ))}
-                           </Accordion>
-                         </div>
-                       )}
-                    </>
+                      {message.sources && message.sources.length > 0 && (
+                        <div className={styles.sourcesPanel}>
+                          <Accordion
+                            type="single"
+                            collapsible
+                            className="flex-col"
+                          >
+                            <AccordionItem value={`sources-${index}`}>
+                              <AccordionTrigger className={styles.sourcesTrigger}>
+                                <h3>Sources ({message.sources.length})</h3>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <ul className={styles.sourcesList}>
+                                  {message.sources.map((source, sourceIndex) => {
+                                    const sourceDoc =
+                                      message.sourceDocs?.[sourceIndex];
+
+                                    return (
+                                      <li
+                                        className={styles.sourceItem}
+                                        key={`${source.source}-${source.page ?? 'unknown'}-${sourceIndex}`}
+                                      >
+                                        <p className={styles.sourceCitation}>
+                                          Source: {source.filename}
+                                          {source.page
+                                            ? `, p.${source.page}`
+                                            : ''}
+                                        </p>
+                                        {sourceDoc?.pageContent && (
+                                          <ReactMarkdown>
+                                            {sourceDoc.pageContent.slice(0, 320)}
+                                          </ReactMarkdown>
+                                        )}
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -305,7 +320,7 @@ export default function Home() {
                         ? 'Waiting for response...'
                         : uploading
                           ? 'Ingesting your PDF...'
-                        : 'What are the courses offered at TheSkillPedia.com?'
+                        : 'Ask a question about your uploaded documents...'
                     }
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -341,11 +356,6 @@ export default function Home() {
             )}
           </main>
         </div>
-        <footer className={styles.footer}>
-          <a href="https://twitter.com/TheSkillPedia">
-            Powered by LangChainAI. Learn Generative AI TheSkillPedia (Twitter: @TheSkillPedia).
-          </a>
-        </footer>
       </Layout>
     </>
   );

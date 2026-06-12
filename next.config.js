@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
   // swcMinify removed — enabled by default and no longer a valid option in Next.js 16
   turbopack: {
     // topLevelAwait is supported natively by Turbopack; no extra config needed.

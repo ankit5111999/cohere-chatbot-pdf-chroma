@@ -5,6 +5,9 @@ import { COLLECTION_NAME } from '@/config/chroma';
 import { Chroma } from "@langchain/community/vectorstores/chroma";
 
 type ChatTurn = [string, string];
+type SourceDocument = {
+  metadata?: Record<string, any>;
+};
 
 const formatChatHistory = (history: unknown) => {
   if (!Array.isArray(history)) {
@@ -23,6 +26,50 @@ const formatChatHistory = (history: unknown) => {
       [`Human: ${userMessage}`, `Assistant: ${assistantMessage}`].join('\n'),
     )
     .join('\n\n');
+};
+
+const getPageNumber = (metadata: Record<string, any>) => {
+  const page =
+    metadata.page ??
+    metadata.pageNumber ??
+    metadata.loc?.pageNumber ??
+    metadata.pdf?.pageNumber;
+
+  if (typeof page === 'number') {
+    return page;
+  }
+
+  if (typeof page === 'string') {
+    const parsed = Number(page);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  return undefined;
+};
+
+const getSources = (sourceDocuments: SourceDocument[] = []) => {
+  const seen = new Set<string>();
+
+  return sourceDocuments.flatMap((doc) => {
+    const metadata = doc.metadata ?? {};
+    const source = String(metadata.source ?? 'Unknown source');
+    const page = getPageNumber(metadata);
+    const key = `${source}:${page ?? 'unknown'}`;
+
+    if (seen.has(key)) {
+      return [];
+    }
+
+    seen.add(key);
+
+    return [
+      {
+        filename: source.replace(/\\/g, '/').split('/').pop() ?? source,
+        page,
+        source,
+      },
+    ];
+  });
 };
 
 export default async function handler(
@@ -63,9 +110,16 @@ export default async function handler(
       question: sanitizedQuestion,
       chat_history: chatHistory,
     });
+    const sourceDocuments =
+      response.sourceDocuments ?? response.source_documents ?? [];
+    const sources = getSources(sourceDocuments);
 
     console.log('response', response);
-    res.status(200).json(response);
+    res.status(200).json({
+      ...response,
+      sourceDocuments,
+      sources,
+    });
   } catch (error: any) {
     console.log('error', error);
     res.status(500).json({ error: error.message || 'Something went wrong' });
